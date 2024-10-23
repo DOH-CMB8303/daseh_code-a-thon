@@ -1,0 +1,31 @@
+---
+title: "Code_A_Thon_Project"
+author: "Chelsea"
+date: "2024-10-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+```{r library, include= FALSE}
+library(tidyverse)
+library(Hmisc)
+library(foreign)
+library(ggplot2)
+library(finalfit)
+library(forcats)
+library(haven)
+library(dplyr)
+library(readxl)
+library(SOAR)
+suppressMessages(library(tidyverse))
+suppressMessages(library(Hmisc))
+suppressMessages(library(lubridate))
+library(injuryepi)
+library(overdoser)
+library(rvdrs)
+```
+

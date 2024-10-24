@@ -29,6 +29,7 @@ library(overdoser)
 library(rvdrs)
 library(maps)
 library(stringr)
+library(tidygeocoder)
 ```
 
 
@@ -41,7 +42,7 @@ load("S:/PCH/OHC/IVP/InjuryEpi/suicide/WA-VDRS Data/WA-VDRS Data/VDRS2022_Data.R
 Combine data with mapping data
 ```{r}
 #mapping data
-wa_county <- map_data("county") %>% filter(region == "washington")
+zip_wa <- zctas(state = "WA", year = 2010)
 
 #clean county name in VDRS data
 wa_nvdrs22_comp$county<- gsub(", WA","",wa_nvdrs22_comp$ResidenceFIPS)
@@ -49,7 +50,7 @@ head(wa_nvdrs22_comp$county)
 
 wa_nvdrs22_comp<- wa_nvdrs22_comp %>% mutate(str_to_lower(county),
                                              str_to_lower(ResidenceState))
-wa_nvdrs22_comp<-wa_nvdrs22_comp %>% rename(region=ResidenceState, subregion=county)
+wa_nvdrs22_comp<-wa_nvdrs22_comp %>% rename(region=ResidenceState, subregion=county, order=ResidenceZip)
 head(wa_nvdrs22_comp$subregion)
 
 wa_nvdrs22_comp$subregion <- str_to_lower(wa_nvdrs22_comp$subregion)
@@ -58,7 +59,17 @@ head(wa_nvdrs22_comp$subregion)
 head(wa_nvdrs22_comp$region)
 
 #subgroup VDRS data to needed variables
-suicide_cir<-c("region", "subregion", "IncidentYear_chr","IncidentNumber", "Sex", "RaceEthnicity_c","AgeYears_c", "Military", "RelationshipStatus", "AbstractorDeathmanner_c", "MentalHealthProblem_c", "DepressedMood_c", "AlcoholProblem_c", "MentalIllnessTreatmentCurrnt_c", "HistoryMentalIllnessTreatmnt_c, IntimatePartnerProblem_c, Argument_c,SuicideThoughtHistory,SuicideAttemptHistory_c,HistorySelfHarm_c,SuicideIntentDisclosed_c,DisclosedToIntimatePartner_c,DisclosedToOtherFamilyMember_c,DisclosedToHealthCareWorker_c,DisclosedToFriend_c,DisclosedToNeighbor_c,DisclosedToSocialMedia_c,SuicideNote_c,PhysicalHealthProblem_c,JobProblem_c,FinancialProblem_c,SchoolProblem_c,EvictionOrLossOfHome_c,WeaponType1)
+suicide_cir<-c("order","region", "subregion", "IncidentYear_chr","IncidentNumber", "Sex", "RaceEthnicity_c","AgeYears_c", "Military", "RelationshipStatus", "AbstractorDeathmanner_c", "MentalHealthProblem_c", "DepressedMood_c", "AlcoholProblem_c", "MentalIllnessTreatmentCurrnt_c", "HistoryMentalIllnessTreatmnt_c", "IntimatePartnerProblem_c", "Argument_c", "SuicideThoughtHistory_c", "SuicideAttemptHistory_c", "HistorySelfHarm_c", "SuicideIntentDisclosed_c", "DisclosedToIntimatePartner_c", "DisclosedToOtherFamilyMember_c", "DisclosedToHealthCareWorker_c", "DisclosedToFriend_c", "DisclosedToNeighbor_c", "DisclosedToSocialMedia_c", "SuicideNote_c", "PhysicalHealthProblem_c", "JobProblem_c", "FinancialProblem_c", "SchoolProblem_c", "EvictionOrLossOfHome_c", "WeaponType1")
+
+#suicide only data
+wa_nvdrs22_comp_suicidecir<-wa_nvdrs22_comp %>% 
+  filter(AbstractorDeathmanner_c=="Suicide or intentional self-harm") %>% select(all_of(suicide_cir))
+
+```
+
+
+Summarizing data to 
+```{r}
 
 ```
 

@@ -70,18 +70,52 @@ wa_nvdrs22_comp_suicidecir<-wa_nvdrs22_comp %>%
   filter(ResidenceState=="53")
   select(all_of(suicide_cir)) 
   
-wa_nvdrs22_comp_suicidecir %>% is.na("ResidenceZip")
+wa_nvdrs22_comp_suicidecir %>% is.na("ResidenceZip")#looking for na values in this varuable so we can drop them or replace them
 ```
 
 
 Summarizing data for mental health problems by zip code
 ```{r}
 wa_nvdrs22_suicidecir_MHP<-wa_nvdrs22_comp_suicidecir %>% 
-  select(c("ResidenceState","ResidenceFIPS", "ResidenceZip", "IncidentYear_chr","MentalHealthProblem_c")) %>% 
-  filter()
+  select(c("ResidenceState","ResidenceFIPS", "ResidenceZip", "IncidentYear_chr","MentalHealthProblem_c","DepressedMood_c")) %>% 
+  mutate(ResidenceZip=ifelse(is.na(ResidenceZip),99999,ResidenceZip)) %>% 
+  mutate(mentaldepressed= case_when(MentalHealthProblem_c=="Yes"|DepressedMood_c=="Yes"~'Yes',
+                                                          TRUE~ 'No, Not Available, Unknown'))
 
-wa_nvdrs22_suicidecir_MHP %>% count(MentalHealthProblem_c=="No, Not Available, Unknown",ResidenceZip)
+#change zip codes with 0 value to unknown value of 99999
+wa_nvdrs22_suicidecir_MHP %>% count(ResidenceZip)
+wa_nvdrs22_suicidecir_MHP %>% count(ResidenceZip!="0",IncidentYear_chr)
+wa_nvdrs22_suicidecir_MHP[wa_nvdrs22_suicidecir_MHP$ResidenceZip==0, "ResidenceZip"]<-99999
+wa_nvdrs22_suicidecir_MHP %>% count(ResidenceZip)
 
-wa_nvdrs22_comp_suicidecir %>% table("ResidenceZip", "MentalHealthProblem_c")
+
+
+wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP %>% filter(mentaldepressed=="Yes")
+table(wa_nvdrs22_suicidecir_MHP2$ResidenceZip)
+
+wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP %>% group_by(ResidenceZip) %>% 
+  count(mentaldepressed) %>% 
+  filter(mentaldepressed=="Yes")
+
+wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP2 %>% mutate(ResidenceZip=as.character(ResidenceZip))
+
+wa_nvdrs22_mh_map<-left_join(zip_wa,wa_nvdrs22_suicidecir_MHP2,by=join_by(ZCTA5CE10==ResidenceZip))
+
 ```
+
+
+Combining the Mapping data
+```{r}
+wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP2 %>% mutate(ResidenceZip=as.character(ResidenceZip))
+
+wa_nvdrs22_mh_map<-left_join(zip_wa,wa_nvdrs22_suicidecir_MHP2,by=join_by(ZCTA5CE10==ResidenceZip))
+```
+
+
+Attempting to map?
+```{r}
+ggplot(data = wa_nvdrs22_mh_map, aes(fill = n)) + 
+  geom_sf()
+```
+
 

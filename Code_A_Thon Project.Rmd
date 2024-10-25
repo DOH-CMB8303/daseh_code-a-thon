@@ -44,6 +44,8 @@ Combine data with mapping data
 #mapping data
 zip_wa <- zctas(state = "WA", year = 2010)
 
+
+
 #clean county name in VDRS data
 wa_nvdrs22_comp$ResidenceFIPS<- gsub(", WA","",wa_nvdrs22_comp$ResidenceFIPS)
 head(wa_nvdrs22_comp$ResidenceFIPS)
@@ -65,10 +67,10 @@ suicide_cir<-c("ResidenceState","ResidenceFIPS", "ResidenceZip", "IncidentYear_c
 
 #suicide only data
 wa_nvdrs22_comp_suicidecir<-wa_nvdrs22_comp %>% 
-  filter(AbstractorDeathmanner_c=="Suicide or intentional self-harm") %>% 
+  filter(AbstractorDeathmanner_c == "Suicide or intentional self-harm") %>% 
   filter(IncidentYear>=2018) %>% 
-  filter(ResidenceState=="53")
-  select(all_of(suicide_cir)) 
+  filter(ResidenceState=="53") %>% 
+  select(suicide_cir) 
   
 wa_nvdrs22_comp_suicidecir %>% is.na("ResidenceZip")#looking for na values in this varuable so we can drop them or replace them
 ```
@@ -89,17 +91,11 @@ wa_nvdrs22_suicidecir_MHP[wa_nvdrs22_suicidecir_MHP$ResidenceZip==0, "ResidenceZ
 wa_nvdrs22_suicidecir_MHP %>% count(ResidenceZip)
 
 
-
-wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP %>% filter(mentaldepressed=="Yes")
-table(wa_nvdrs22_suicidecir_MHP2$ResidenceZip)
-
 wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP %>% group_by(ResidenceZip) %>% 
   count(mentaldepressed) %>% 
   filter(mentaldepressed=="Yes")
 
-wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP2 %>% mutate(ResidenceZip=as.character(ResidenceZip))
 
-wa_nvdrs22_mh_map<-left_join(zip_wa,wa_nvdrs22_suicidecir_MHP2,by=join_by(ZCTA5CE10==ResidenceZip))
 
 ```
 
@@ -109,6 +105,7 @@ Combining the Mapping data
 wa_nvdrs22_suicidecir_MHP2<-wa_nvdrs22_suicidecir_MHP2 %>% mutate(ResidenceZip=as.character(ResidenceZip))
 
 wa_nvdrs22_mh_map<-left_join(zip_wa,wa_nvdrs22_suicidecir_MHP2,by=join_by(ZCTA5CE10==ResidenceZip))
+
 ```
 
 
@@ -118,4 +115,57 @@ ggplot(data = wa_nvdrs22_mh_map, aes(fill = n)) +
   geom_sf()
 ```
 
+
+County level data
+```{r}
+library(tigris)
+
+wa_counties<-counties(state = "WA", cb= TRUE)
+  
+#checking NAs'in county data
+table(wa_nvdrs22_suicidecir_MHP$ResidenceFIPS)
+wa_nvdrs22_suicidecir_MHP %>% pull(ResidenceFIPS) %>% is.na()
+
+
+#getting county level counts
+wa_nvdrs22_suicidecir_MHP3<-wa_nvdrs22_suicidecir_MHP %>% group_by(ResidenceFIPS) %>% 
+  count(mentaldepressed) %>% 
+  filter(mentaldepressed=="Yes")
+```
+
+Combine county data with maping data
+```{r}
+wa_nvdrs22_mh_countymap<-left_join(wa_counties,wa_nvdrs22_suicidecir_MHP3,by=join_by(NAME==ResidenceFIPS))
+wa_nvdrs22_mh_countymap
+
+```
+
+
+Mapping County Level
+```{r}
+library(esquisse)
+esquisser(wa_nvdrs22_mh_countymap)
+
+ggplot(wa_nvdrs22_mh_countymap) +
+  aes(fill = n) +
+  geom_sf() +
+  scale_fill_distiller(palette = "GnBu", direction = -1) +
+  theme_void()
+
+```
+
+looking at data based on % out of cases
+```{r}
+
+#changing MD variable into 
+
+
+
+#to get the % out of MHD for cases
+wa_nvdrs22_suicidecir_MHP %>% group_by() %>% 
+  psum(md)/n()
+
+
+
+```
 

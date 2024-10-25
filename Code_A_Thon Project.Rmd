@@ -30,6 +30,8 @@ library(rvdrs)
 library(maps)
 library(stringr)
 library(tidygeocoder)
+library(tigris)
+library(ggplot2)
 ```
 
 
@@ -72,7 +74,7 @@ wa_nvdrs22_comp_suicidecir<-wa_nvdrs22_comp %>%
   filter(ResidenceState=="53") %>% 
   select(suicide_cir) 
   
-wa_nvdrs22_comp_suicidecir %>% is.na("ResidenceZip")#looking for na values in this varuable so we can drop them or replace them
+#wa_nvdrs22_comp_suicidecir %>% is.na("ResidenceZip")#looking for na values in this varuable so we can drop them or replace them
 ```
 
 
@@ -118,8 +120,6 @@ ggplot(data = wa_nvdrs22_mh_map, aes(fill = n)) +
 
 County level data
 ```{r}
-library(tigris)
-
 wa_counties<-counties(state = "WA", cb= TRUE)
   
 #checking NAs'in county data
@@ -143,8 +143,8 @@ wa_nvdrs22_mh_countymap
 
 Mapping County Level
 ```{r}
-library(esquisse)
-esquisser(wa_nvdrs22_mh_countymap)
+# library(esquisse)
+# esquisser(wa_nvdrs22_mh_countymap)
 
 ggplot(wa_nvdrs22_mh_countymap) +
   aes(fill = n) +
@@ -157,15 +157,33 @@ ggplot(wa_nvdrs22_mh_countymap) +
 looking at data based on % out of cases
 ```{r}
 
-#changing MD variable into 
-
-
+#changing MD variable into binomial
+wa_nvdrs22_suicidecir_MHP$mentaldepressed2 <- ifelse(wa_nvdrs22_suicidecir_MHP$mentaldepressed == "Yes",1,0)
+head(wa_nvdrs22_suicidecir_MHP$mentaldepressed2)
+class(wa_nvdrs22_suicidecir_MHP$mentaldepressed2)
 
 #to get the % out of MHD for cases
-wa_nvdrs22_suicidecir_MHP %>% group_by() %>% 
-  psum(md)/n()
+wa_nvdrs22_suicidecir_MHP <- wa_nvdrs22_suicidecir_MHP %>%
+  group_by(ResidenceFIPS) %>%
+  mutate(percent = (sum(mentaldepressed2)/n()) * 100)
+
+#combine with mapping data
+wa_nvdrs22_mh_countymap2<-left_join(wa_counties,wa_nvdrs22_suicidecir_MHP,by=join_by(NAME==ResidenceFIPS))
+
+```
 
 
+Creating map
+```{r}
+library(esquisse)
+esquisser(wa_nvdrs22_mh_countymap2)
 
+ggplot(wa_nvdrs22_mh_countymap2) +
+ aes(fill = percent) +
+ geom_sf() +
+ scale_fill_distiller(palette = "BuGn", 
+ direction = 1) +
+ labs(title = "WA-VDRS Suicide Cases 2018-2022", subtitle = "Percentage of Cases Reporting a Mental Health Problem or Depressed Mood") +
+ theme_void()
 ```
 
